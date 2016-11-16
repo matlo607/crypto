@@ -4,6 +4,7 @@
 #include "HashingStrategy.hpp"
 #include "SHA1.hpp"
 #include "SHA256.hpp"
+#include "MD4.hpp"
 #include "MD5.hpp"
 
 #include <string>
@@ -174,6 +175,18 @@ TEST(Hashing, SHA256_Test)
     };
 
     hashProve(challenges, crypto::SHA256hashing());
+}
+
+TEST(Hashing, MD4_Test)
+{
+    HashChallenges<3> challenges =
+    {
+        std::make_pair(TestEnvironment::getTxt1(), "a448017aaf21d8525fc10ae87aa6729d"),
+        std::make_pair(TestEnvironment::getTxt2(), "2d85cb0dfc938572c5b3e8d41b724c55"),
+        std::make_pair(TestEnvironment::getTxt3(), "bdbba5cc002c432ac14368c4ac6a03eb")
+    };
+
+    hashProve(challenges, crypto::MD4hashing());
 }
 
 TEST(Hashing, MD5_Test)

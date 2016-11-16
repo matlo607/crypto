@@ -11,6 +11,7 @@ all: test_libcrypto
 
 INCLUDE_FILES=../include/*.hpp ../include/*.ipp
 
+MD4.o: ../src/MD4.cpp $(INCLUDE_FILES)
 MD5.o: ../src/MD5.cpp $(INCLUDE_FILES)
 SHA1.o: ../src/SHA1.cpp $(INCLUDE_FILES)
 SHA256.o: ../src/SHA256.cpp $(INCLUDE_FILES)
@@ -19,7 +20,7 @@ test_libcrypto.o: test_libcrypto.cpp $(INCLUDE_FILES)
 %.o: %.cpp
 	$(CC) $(CXXFLAGS) $(INCFLAGS) -c $< -o $@
 
-test_libcrypto: test_libcrypto.o ../src/SHA256.o ../src/SHA1.o ../src/MD5.o
+test_libcrypto: test_libcrypto.o ../src/SHA256.o ../src/SHA1.o ../src/MD5.o ../src/MD4.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
 clean:
