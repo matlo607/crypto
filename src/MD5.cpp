@@ -13,13 +13,15 @@ using MD5hash_uint32 = CryptoHash_uint32<MD5_HASH_SIZE>;
 using MD5MsgBlock_uint32 = MsgBlock_uint32<MD5_MSGBLOCK_SIZE>;
 using MD5MsgBlock_uint64 = MsgBlock_uint64<MD5_MSGBLOCK_SIZE>;
 
+using HS = HashingStrategy<MD5_HASH_SIZE, MD5_MSGBLOCK_SIZE>;
+
 MD5hashing::MD5hashing(void) :
-    HashingStrategy<MD5_HASH_SIZE, MD5_MSGBLOCK_SIZE>(std::make_unique<MD5hashing::MD5BlockCipherLike>())
+    HS(std::make_unique<MD5hashing::MD5BlockCipherLike>())
     {
     }
 
 MD5hashing::MD5BlockCipherLike::MD5BlockCipherLike(void)
-    : HashingStrategy<MD5_HASH_SIZE, MD5_MSGBLOCK_SIZE>::StrategyBlockCipherLike()
+    : HS::StrategyBlockCipherLike()
 {
     reset();
 }

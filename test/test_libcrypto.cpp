@@ -3,6 +3,7 @@
 #include "utils.hpp"
 #include "HashingStrategy.hpp"
 #include "SHA1.hpp"
+#include "SHA224.hpp"
 #include "SHA256.hpp"
 #include "MD4.hpp"
 #include "MD5.hpp"
@@ -44,8 +45,11 @@ using crypto::operator<<;
 template <size_t N>
 using HashChallenges = std::array< std::pair<const std::string, const std::string>, N >;
 
-template <size_t N_challenges, size_t N_hashSize, size_t N_blockSize>
-void hashProve(HashChallenges<N_challenges>& challenges, crypto::HashingStrategy<N_hashSize,N_blockSize>&& strategy)
+template <size_t N_tmphashSize, size_t N_blockSize, size_t N_hashSize>
+using HS = crypto::HashingStrategy< N_tmphashSize, N_blockSize, N_hashSize >;
+
+template <size_t N_challenges, size_t N_tmphashSize, size_t N_blockSize, size_t N_hashSize>
+void hashProve(HashChallenges<N_challenges>& challenges, HS<N_tmphashSize,N_blockSize, N_hashSize>&& strategy)
 {
     std::stringstream ss;
 #ifdef SHOW_TIMING
@@ -161,6 +165,20 @@ TEST(Hashing, SHA1_Test)
     };
 
     hashProve(challenges, crypto::SHA1hashing());
+}
+
+TEST(Hashing, SHA224_Test)
+{
+    HashChallenges<3> challenges =
+    {
+        {
+            std::make_pair(TestEnvironment::getTxt1(), "23097d223405d8228642a477bda255b32aadbce4bda0b3f7e36c9da7"),
+            std::make_pair(TestEnvironment::getTxt2(), "af7ecfa6465732c6eb343edc65f8b5e2bcf2758e7cd90c053bc52656"),
+            std::make_pair(TestEnvironment::getTxt3(), "cebab609c626ab94f1f6a2d185985d71771c56a7adaa8fca5d6a850d")
+        }
+    };
+
+    hashProve(challenges, crypto::SHA224hashing());
 }
 
 TEST(Hashing, SHA256_Test)

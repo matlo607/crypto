@@ -1,21 +1,20 @@
 #ifndef _SHA256_HASHING_
 #define _SHA256_HASHING_
 
-#include "HashingStrategy.hpp"
+#include "SHA256224.hpp"
 
 namespace crypto {
 
 #define SHA256_HASH_SIZE      32 // (in bytes)
-#define SHA256_MSGBLOCK_SIZE  64 // (in bytes)
 
     using SHA256hash = CryptoHash<SHA256_HASH_SIZE>;
 
-    class SHA256hashing final : public HashingStrategy<SHA256_HASH_SIZE, SHA256_MSGBLOCK_SIZE>
+    class SHA256hashing final : public SHA256224hashing<SHA256_HASH_SIZE>
     {
         public:
 
             SHA256hashing(void);
-            ~SHA256hashing() = default;
+            virtual ~SHA256hashing() = default;
 
             SHA256hashing(const SHA256hashing& other) = delete;
             SHA256hashing& operator=(const SHA256hashing& other) = delete;
@@ -25,16 +24,11 @@ namespace crypto {
 
         private:
 
-            class SHA256BlockCipherLike final : public StrategyBlockCipherLike
+            class SHA256BlockCipherLike final : public SHA256224BlockCipherLike
             {
-                private:
-                    virtual void process(void) final override;
-                    virtual SHA256hash getDigest(void) final override;
-                    virtual void setMsgSize(size_t size) final override;
-
                 public:
                     SHA256BlockCipherLike(void);
-                    ~SHA256BlockCipherLike() = default;
+                    virtual ~SHA256BlockCipherLike() = default;
 
                     SHA256BlockCipherLike(const SHA256BlockCipherLike& other) = delete;
                     SHA256BlockCipherLike& operator=(const SHA256BlockCipherLike& other) = delete;
@@ -42,7 +36,7 @@ namespace crypto {
                     SHA256BlockCipherLike(SHA256BlockCipherLike&& other) = default;
                     SHA256BlockCipherLike& operator=(SHA256BlockCipherLike&& other) = default;
 
-                    void reset(void) final override;
+                    virtual void reset(void) final override;
             };
     };
 
