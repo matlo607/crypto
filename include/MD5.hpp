@@ -10,7 +10,7 @@ namespace crypto {
 
     using MD5hash = CryptoHash<MD5_HASH_SIZE>;
 
-    class MD5hashing : public HashingStrategy<MD5_HASH_SIZE, MD5_MSGBLOCK_SIZE>
+    class MD5hashing : public HashingStrategy<MD5_HASH_SIZE, uint32_t, MD5_MSGBLOCK_SIZE>
     {
         public:
 

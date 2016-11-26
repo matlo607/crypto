@@ -11,17 +11,15 @@ namespace crypto {
     template <size_t N>
         using SHA256224hash = CryptoHash<N>;
 
-
-    template <size_t N>
-        using HS = HashingStrategy<SHA256224_TMPHASH_SIZE, SHA256224_MSGBLOCK_SIZE, N>;
-
     template <size_t N_digest>
-        class SHA256224hashing : public HS<N_digest>
+        class SHA256224hashing : public HashingStrategy<SHA256224_TMPHASH_SIZE, uint32_t, SHA256224_MSGBLOCK_SIZE, N_digest>
     {
         protected:
 
             class SHA256224BlockCipherLike;
 
+            template <size_t N>
+                using HS = HashingStrategy<SHA256224_TMPHASH_SIZE, uint32_t, SHA256224_MSGBLOCK_SIZE, N>;
 
             SHA256224hashing(std::unique_ptr< typename HS<N_digest>::StrategyBlockCipherLike >&& p);
             SHA256224hashing(void) = delete;

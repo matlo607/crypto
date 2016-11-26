@@ -35,20 +35,20 @@ namespace crypto {
             return stream;
         }
 
-    template <size_t N_tmpdigest, size_t N_msgBlock, size_t N_digest>
-        HashingStrategy<N_tmpdigest,N_msgBlock,N_digest>::HashingStrategy(std::unique_ptr<StrategyBlockCipherLike>&& p) :
+    template <size_t N_tmpdigest, typename T_workWord, size_t N_msgBlock, size_t N_digest>
+        HashingStrategy<N_tmpdigest,T_workWord,N_msgBlock,N_digest>::HashingStrategy(std::unique_ptr<StrategyBlockCipherLike>&& p) :
             m_msgLength(0),
             m_blockCipherStrategy(std::move(p))
     {}
 
-    template <size_t N_tmpdigest, size_t N_msgBlock, size_t N_digest>
-        HashingStrategy<N_tmpdigest,N_msgBlock,N_digest>::HashingStrategy(HashingStrategy&& other) :
+    template <size_t N_tmpdigest, typename T_workWord, size_t N_msgBlock, size_t N_digest>
+        HashingStrategy<N_tmpdigest,T_workWord,N_msgBlock,N_digest>::HashingStrategy(HashingStrategy&& other) :
             m_msgLength(other.m_msgLength),
             m_blockCipherStrategy(std::move(other.m_blockCipherStrategy))
     {}
 
-    template <size_t N_tmpdigest, size_t N_msgBlock, size_t N_digest>
-        HashingStrategy<N_tmpdigest,N_msgBlock,N_digest>& HashingStrategy<N_tmpdigest,N_msgBlock,N_digest>::operator=(HashingStrategy&& other)
+    template <size_t N_tmpdigest, typename T_workWord, size_t N_msgBlock, size_t N_digest>
+        HashingStrategy<N_tmpdigest,T_workWord,N_msgBlock,N_digest>& HashingStrategy<N_tmpdigest,T_workWord,N_msgBlock,N_digest>::operator=(HashingStrategy&& other)
         {
             if (this != &other) {
                 m_msgLength = other.m_msgLength;
@@ -57,8 +57,8 @@ namespace crypto {
             return *this;
         }
 
-    template <size_t N_tmpdigest, size_t N_msgBlock, size_t N_digest>
-        bool HashingStrategy<N_tmpdigest,N_msgBlock,N_digest>::update(const uint8_t buf[], size_t len, size_t offset)
+    template <size_t N_tmpdigest, typename T_workWord, size_t N_msgBlock, size_t N_digest>
+        bool HashingStrategy<N_tmpdigest,T_workWord,N_msgBlock,N_digest>::update(const uint8_t buf[], size_t len, size_t offset)
         {
             assert(buf != NULL && offset <= len);
 
@@ -79,8 +79,8 @@ namespace crypto {
             return true;
         }
 
-    template <size_t N_tmpdigest, size_t N_msgBlock, size_t N_digest>
-        CryptoHash<N_digest> HashingStrategy<N_tmpdigest,N_msgBlock,N_digest>::getHash(void)
+    template <size_t N_tmpdigest, typename T_workWord, size_t N_msgBlock, size_t N_digest>
+        CryptoHash<N_digest> HashingStrategy<N_tmpdigest,T_workWord,N_msgBlock,N_digest>::getHash(void)
         {
             // size of the message in bits
             CryptoHash<N_digest> digest = m_blockCipherStrategy->addPadding(m_msgLength * 8);
@@ -94,20 +94,20 @@ namespace crypto {
             return std::move(digest);
         }
 
-    template <size_t N_tmpdigest, size_t N_msgBlock, size_t N_digest>
-        HashingStrategy<N_tmpdigest,N_msgBlock,N_digest>::StrategyBlockCipherLike::StrategyBlockCipherLike() :
+    template <size_t N_tmpdigest, typename T_workWord, size_t N_msgBlock, size_t N_digest>
+        HashingStrategy<N_tmpdigest,T_workWord,N_msgBlock,N_digest>::StrategyBlockCipherLike::StrategyBlockCipherLike() :
             m_msgBlockIndex(0) {}
 
-    template <size_t N_tmpdigest, size_t N_msgBlock, size_t N_digest>
-        HashingStrategy<N_tmpdigest,N_msgBlock,N_digest>::StrategyBlockCipherLike::StrategyBlockCipherLike(StrategyBlockCipherLike&& other) :
+    template <size_t N_tmpdigest, typename T_workWord, size_t N_msgBlock, size_t N_digest>
+        HashingStrategy<N_tmpdigest,T_workWord,N_msgBlock,N_digest>::StrategyBlockCipherLike::StrategyBlockCipherLike(StrategyBlockCipherLike&& other) :
             m_msgBlock(std::move(other.m_msgBlock)),
             m_msgBlockIndex(other.m_msgBlockIndex),
             m_intermediateHash(std::move(other.m_intermediateHash))
     {}
 
-    template <size_t N_tmpdigest, size_t N_msgBlock, size_t N_digest>
-        typename HashingStrategy<N_tmpdigest,N_msgBlock,N_digest>::StrategyBlockCipherLike&
-        HashingStrategy<N_tmpdigest,N_msgBlock,N_digest>::StrategyBlockCipherLike::operator=(StrategyBlockCipherLike&& other)
+    template <size_t N_tmpdigest, typename T_workWord, size_t N_msgBlock, size_t N_digest>
+        typename HashingStrategy<N_tmpdigest,T_workWord,N_msgBlock,N_digest>::StrategyBlockCipherLike&
+        HashingStrategy<N_tmpdigest,T_workWord,N_msgBlock,N_digest>::StrategyBlockCipherLike::operator=(StrategyBlockCipherLike&& other)
         {
             if (this != &other) {
                 m_msgBlockIndex = other.m_msgBlockIndex;
@@ -118,14 +118,14 @@ namespace crypto {
         }
 
 
-    template <size_t N_tmpdigest, size_t N_msgBlock, size_t N_digest>
-        size_t HashingStrategy<N_tmpdigest,N_msgBlock,N_digest>::StrategyBlockCipherLike::write(const uint8_t buf[], size_t len)
+    template <size_t N_tmpdigest, typename T_workWord, size_t N_msgBlock, size_t N_digest>
+        size_t HashingStrategy<N_tmpdigest,T_workWord,N_msgBlock,N_digest>::StrategyBlockCipherLike::write(const uint8_t buf[], size_t len)
         {
             assert(buf != NULL && len > 0);
 
-            uint8_t writable = sizeof(MsgBlock_uint8<N_msgBlock>) - m_msgBlockIndex;
+            auto writable = sizeof(MsgBlock_uint8<N_msgBlock>) - m_msgBlockIndex;
             bool processing = (len >= writable);
-            uint8_t toWrite = processing ? writable : len;
+            auto toWrite = processing ? writable : len;
 
             memcpy(m_msgBlock.data() + m_msgBlockIndex, buf, toWrite);
 
@@ -138,10 +138,13 @@ namespace crypto {
             return toWrite;
         }
 
-    template <size_t N_tmpdigest, size_t N_msgBlock, size_t N_digest>
-        CryptoHash<N_digest> HashingStrategy<N_tmpdigest,N_msgBlock,N_digest>::StrategyBlockCipherLike::addPadding(size_t len)
+    template <size_t N_tmpdigest, typename T_workWord, size_t N_msgBlock, size_t N_digest>
+        CryptoHash<N_digest> HashingStrategy<N_tmpdigest,T_workWord,N_msgBlock,N_digest>::StrategyBlockCipherLike::addPadding(size_t len)
         {
-            const size_t MSGLENGTH_offset = sizeof(MsgBlock_uint8<N_msgBlock>) - sizeof(uint64_t);
+            auto const MSGLENGTH_offset =
+                (std::is_same<T_workWord, uint64_t>::value) ?
+                sizeof(MsgBlock_uint8<N_msgBlock>) - sizeof(uint64_t) * 2 :
+                sizeof(MsgBlock_uint8<N_msgBlock>) - sizeof(uint64_t);
 
             // Write a "1" followed by 7 "0"s
             m_msgBlock[m_msgBlockIndex++] = 0x80;

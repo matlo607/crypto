@@ -13,13 +13,15 @@ using MD4hash_uint32 = CryptoHash_uint32<MD4_HASH_SIZE>;
 using MD4MsgBlock_uint32 = MsgBlock_uint32<MD4_MSGBLOCK_SIZE>;
 using MD4MsgBlock_uint64 = MsgBlock_uint64<MD4_MSGBLOCK_SIZE>;
 
+using HS = HashingStrategy<MD4_HASH_SIZE, uint32_t, MD4_MSGBLOCK_SIZE>;
+
 MD4hashing::MD4hashing(void) :
-    HashingStrategy<MD4_HASH_SIZE, MD4_MSGBLOCK_SIZE>(std::make_unique<MD4hashing::MD4BlockCipherLike>())
+    HS(std::make_unique<MD4hashing::MD4BlockCipherLike>())
     {
     }
 
 MD4hashing::MD4BlockCipherLike::MD4BlockCipherLike(void)
-    : HashingStrategy<MD4_HASH_SIZE, MD4_MSGBLOCK_SIZE>::StrategyBlockCipherLike()
+    : HS::StrategyBlockCipherLike()
 {
     reset();
 }

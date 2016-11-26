@@ -13,13 +13,15 @@ using SHA1hash_uint32 = CryptoHash_uint32<SHA1_HASH_SIZE>;
 using SHA1MsgBlock_uint32 = MsgBlock_uint32<SHA1_MSGBLOCK_SIZE>;
 using SHA1MsgBlock_uint64 = MsgBlock_uint64<SHA1_MSGBLOCK_SIZE>;
 
+using HS = HashingStrategy<SHA1_HASH_SIZE, uint32_t, SHA1_MSGBLOCK_SIZE>;
+
 SHA1hashing::SHA1hashing(void) :
-    HashingStrategy<SHA1_HASH_SIZE, SHA1_MSGBLOCK_SIZE>(std::make_unique<SHA1hashing::SHA1BlockCipherLike>())
+    HS(std::make_unique<SHA1hashing::SHA1BlockCipherLike>())
     {
     }
 
 SHA1hashing::SHA1BlockCipherLike::SHA1BlockCipherLike(void)
-    : HashingStrategy<SHA1_HASH_SIZE, SHA1_MSGBLOCK_SIZE>::StrategyBlockCipherLike()
+    : HS::StrategyBlockCipherLike()
 {
     reset();
 }
@@ -42,10 +44,13 @@ SHA1hash SHA1hashing::SHA1BlockCipherLike::getDigest(void)
     SHA1hash digest;
 
 #if __BYTE_ORDER == __LITTLE_ENDIAN
+    auto& dest = *reinterpret_cast<SHA1hash_uint32*>(digest.data());
+
     // write the hash in big endian
-    for (uint8_t i = 0; i < m_intermediateHash.size(); ++i) {
-        (*reinterpret_cast<SHA1hash_uint32*>(digest.data()))[i] = htobe32(m_intermediateHash[i]);
-    }
+    std::transform(m_intermediateHash.begin(),
+            m_intermediateHash.end(),
+            dest.begin(),
+            [] (uint32_t n) { return htobe32(n); });
 #else
     memcpy(digest.data(), m_intermediateHash.data(), digest.size());
 #endif
@@ -75,12 +80,14 @@ void SHA1hashing::SHA1BlockCipherLike::process(void)
     std::array<uint32_t, 80> W; // word sequence
     uint32_t A, B, C, D, E;     // word buffers
 
-    // initialize the first 16 words in the array W
-    for (uint8_t t = 0; t < 16; ++t) {
-        W[t] = htobe32((*reinterpret_cast<SHA1MsgBlock_uint32*>(m_msgBlock.data()))[t]);
-    }
+    // initialize the first 16 words in the array W with the message block
+    auto& msgBlockUInt32 = *reinterpret_cast<SHA1MsgBlock_uint32*>(m_msgBlock.data());
+    std::transform(msgBlockUInt32.begin(),
+            msgBlockUInt32.end(),
+            W.begin(),
+            [] (uint32_t n) { return htobe32(n); });
 
-    for (uint8_t t = 16; t < 80; ++t) {
+    for (auto t = 16; t < 80; ++t) {
         W[t] = rotate_left(W[t-3] ^ W[t-8] ^ W[t-14] ^ W[t-16], 1);
     }
 
@@ -90,7 +97,7 @@ void SHA1hashing::SHA1BlockCipherLike::process(void)
     D = m_intermediateHash[3];
     E = m_intermediateHash[4];
 
-    for (uint8_t t = 0; t < 20; ++t) {
+    for (auto t = 0; t < 20; ++t) {
         auto temp = rotate_left(A,5) + f1(B,C,D) + E + W[t] + K[0];
         E = D;
         D = C;
@@ -99,7 +106,7 @@ void SHA1hashing::SHA1BlockCipherLike::process(void)
         A = temp;
     }
 
-    for(uint8_t t = 20; t < 40; ++t) {
+    for(auto t = 20; t < 40; ++t) {
         auto temp = rotate_left(A,5) + f2(B,C,D) + E + W[t] + K[1];
         E = D;
         D = C;
@@ -108,7 +115,7 @@ void SHA1hashing::SHA1BlockCipherLike::process(void)
         A = temp;
     }
 
-    for(uint8_t t = 40; t < 60; ++t) {
+    for(auto t = 40; t < 60; ++t) {
         auto temp = rotate_left(A,5) + f3(B,C,D) + E + W[t] + K[2];
         E = D;
         D = C;
@@ -117,7 +124,7 @@ void SHA1hashing::SHA1BlockCipherLike::process(void)
         A = temp;
     }
 
-    for(uint8_t t = 60; t < 80; ++t) {
+    for(auto t = 60; t < 80; ++t) {
         auto temp = rotate_left(A,5) + f4(B,C,D) + E + W[t] + K[3];
         E = D;
         D = C;

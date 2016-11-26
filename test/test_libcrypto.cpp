@@ -45,11 +45,11 @@ using crypto::operator<<;
 template <size_t N>
 using HashChallenges = std::array< std::pair<const std::string, const std::string>, N >;
 
-template <size_t N_tmphashSize, size_t N_blockSize, size_t N_hashSize>
-using HS = crypto::HashingStrategy< N_tmphashSize, N_blockSize, N_hashSize >;
+template <size_t N_tmphashSize, typename T_workWord, size_t N_blockSize, size_t N_hashSize>
+using HS = crypto::HashingStrategy< N_tmphashSize, T_workWord, N_blockSize, N_hashSize >;
 
-template <size_t N_challenges, size_t N_tmphashSize, size_t N_blockSize, size_t N_hashSize>
-void hashProve(HashChallenges<N_challenges>& challenges, HS<N_tmphashSize,N_blockSize, N_hashSize>&& strategy)
+template <size_t N_challenges, typename T_workWord, size_t N_tmphashSize, size_t N_blockSize, size_t N_hashSize>
+void hashProve(HashChallenges<N_challenges>& challenges, HS<N_tmphashSize,T_workWord,N_blockSize, N_hashSize>&& strategy)
 {
     std::stringstream ss;
 #ifdef SHOW_TIMING

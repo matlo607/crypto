@@ -32,7 +32,7 @@ namespace crypto {
     template <size_t N>
         using CryptoHash = CryptoHash_uint8<N>;
 
-    template <size_t N_tmpdigest, size_t N_msgBlock, size_t N_digest = N_tmpdigest>
+    template <size_t N_tmpdigest, typename T_workWord, size_t N_msgBlock, size_t N_digest = N_tmpdigest>
         class HashingStrategy
         {
             public:
@@ -74,9 +74,9 @@ namespace crypto {
                     protected:
 
                         MsgBlock_uint8<N_msgBlock> m_msgBlock;
-                        uint16_t m_msgBlockIndex;
+                        size_t m_msgBlockIndex;
 
-                        CryptoHash_uint32<N_tmpdigest> m_intermediateHash;
+                        std::array<T_workWord, N_tmpdigest / sizeof(T_workWord)> m_intermediateHash;
 
                         virtual void process(void) = 0;
                         virtual CryptoHash<N_digest> getDigest(void) = 0;

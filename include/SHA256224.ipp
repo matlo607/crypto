@@ -10,9 +10,14 @@ namespace crypto {
     using SHA256224MsgBlock_uint32 = MsgBlock_uint32<SHA256224_MSGBLOCK_SIZE>;
     using SHA256224MsgBlock_uint64 = MsgBlock_uint64<SHA256224_MSGBLOCK_SIZE>;
 
+    namespace sha256224_detail {
+    template <size_t N>
+        using HS = HashingStrategy<SHA256224_TMPHASH_SIZE, uint32_t, SHA256224_MSGBLOCK_SIZE, N>;
+    } /* namespace sha256224_detail */
+
     template <size_t N_digest>
-        SHA256224hashing<N_digest>::SHA256224hashing(std::unique_ptr< typename HS<N_digest>::StrategyBlockCipherLike >&& p) :
-            HS<N_digest>(std::move(p))
+        SHA256224hashing<N_digest>::SHA256224hashing(std::unique_ptr< typename sha256224_detail::HS<N_digest>::StrategyBlockCipherLike >&& p) :
+            sha256224_detail::HS<N_digest>(std::move(p))
     {
     }
 

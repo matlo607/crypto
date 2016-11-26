@@ -10,7 +10,7 @@ namespace crypto {
 
     using SHA1hash = CryptoHash<SHA1_HASH_SIZE>;
 
-    class SHA1hashing final : public HashingStrategy<SHA1_HASH_SIZE, SHA1_MSGBLOCK_SIZE>
+    class SHA1hashing final : public HashingStrategy<SHA1_HASH_SIZE, uint32_t, SHA1_MSGBLOCK_SIZE>
     {
         public:
 

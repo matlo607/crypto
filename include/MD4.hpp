@@ -10,7 +10,7 @@ namespace crypto {
 
     using MD4hash = CryptoHash<MD4_HASH_SIZE>;
 
-    class MD4hashing : public HashingStrategy<MD4_HASH_SIZE, MD4_MSGBLOCK_SIZE>
+    class MD4hashing : public HashingStrategy<MD4_HASH_SIZE, uint32_t, MD4_MSGBLOCK_SIZE>
     {
         public:
 
