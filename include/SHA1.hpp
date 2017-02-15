@@ -6,11 +6,10 @@
 namespace crypto {
 
 #define SHA1_HASH_SIZE      20 // (in bytes)
-#define SHA1_MSGBLOCK_SIZE  64 // (in bytes)
 
     using SHA1hash = CryptoHash<SHA1_HASH_SIZE>;
 
-    class SHA1hashing final : public HashingStrategy<SHA1_HASH_SIZE, uint32_t, SHA1_MSGBLOCK_SIZE>
+    class SHA1hashing final : public HashingStrategy<SHA1_HASH_SIZE>
     {
         public:
 
@@ -24,6 +23,9 @@ namespace crypto {
             SHA1hashing& operator=(SHA1hashing&& other) = default;
 
         private:
+
+            using HS = HashingStrategy<SHA1_HASH_SIZE>;
+            using HSBC = HS::StrategyBlockCipherLike;
 
             class SHA1BlockCipherLike final : public StrategyBlockCipherLike
             {

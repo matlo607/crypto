@@ -9,16 +9,10 @@ namespace crypto {
 
 using namespace utils;
 
-using MD5hash_uint32 = CryptoHash_uint32<MD5_HASH_SIZE>;
-using MD5MsgBlock_uint32 = MsgBlock_uint32<MD5_MSGBLOCK_SIZE>;
-using MD5MsgBlock_uint64 = MsgBlock_uint64<MD5_MSGBLOCK_SIZE>;
-
-using HS = HashingStrategy<MD5_HASH_SIZE, uint32_t, MD5_MSGBLOCK_SIZE>;
-
 MD5hashing::MD5hashing(void) :
     HS(std::make_unique<MD5hashing::MD5BlockCipherLike>())
-    {
-    }
+{
+}
 
 MD5hashing::MD5BlockCipherLike::MD5BlockCipherLike(void)
     : HS::StrategyBlockCipherLike()
@@ -28,8 +22,8 @@ MD5hashing::MD5BlockCipherLike::MD5BlockCipherLike(void)
 
 void MD5hashing::MD5BlockCipherLike::reset(void)
 {
-    memset(m_msgBlock.data(), 0, sizeof(m_msgBlock));
-    m_msgBlockIndex = 0;
+    m_msgBlock.fill(0);
+    m_spaceAvailable = m_msgBlock;
     m_intermediateHash = {
         0x67452301,
         0xEFCDAB89,
@@ -43,12 +37,19 @@ MD5hash MD5hashing::MD5BlockCipherLike::getDigest(void)
     MD5hash digest;
 
 #if __BYTE_ORDER == __BIG_ENDIAN
+    using MD5hash_uint32 = CryptoHash_uint32<sizeof(MD5hash)>;
+
+    auto& dest = *reinterpret_cast<MD5hash_uint32*>(digest.data());
+
     // write the hash in little endian
-    for (uint8_t i = 0; i < m_intermediateHash.size(); ++i) {
-        (*reinterpret_cast<MD5hash_uint32*>(digest.data()))[i] = htole32(m_intermediateHash[i]);
-    }
+    std::transform(m_intermediateHash.cbegin(),
+                   m_intermediateHash.cend(),
+                   dest.begin(),
+                   [] (uint32_t n) { return htole32(n); });
 #else
-    memcpy(digest.data(), m_intermediateHash.data(), digest.size());
+    auto& temporary = *reinterpret_cast<MD5hash*>(m_intermediateHash.data());
+
+    std::copy(temporary.begin(), temporary.end(), digest.begin());
 #endif
 
     return std::move(digest);
@@ -56,7 +57,9 @@ MD5hash MD5hashing::MD5BlockCipherLike::getDigest(void)
 
 void MD5hashing::MD5BlockCipherLike::setMsgSize(size_t size)
 {
-    (*reinterpret_cast<MD5MsgBlock_uint64*>(m_msgBlock.data())).back() = htole64(size);
+    using MB64 = HSBC::MsgBlock_uint64;
+    auto& dest = *reinterpret_cast<MB64*>(m_msgBlock.data());
+    dest.back() = htole64(size);
 }
 
 void MD5hashing::MD5BlockCipherLike::process(void)
@@ -78,12 +81,14 @@ void MD5hashing::MD5BlockCipherLike::process(void)
         a += b;
     };
 
+    auto& msgBlock = *reinterpret_cast<MsgBlock_uint32*>(m_msgBlock.data());
+
     //std::array<uint32_t, MD5_MSGBLOCK_SIZE> K;
     //for (uint8_t i = 0; i < MD5_MSGBLOCK_SIZE; ++i) {
     //    K[i] = floor((1 << 32) * abs(sin(i + 1)));
     //}
 
-    static std::array<const uint32_t, MD5_MSGBLOCK_SIZE> K =
+    static std::array<uint32_t, std::tuple_size<MsgBlock_uint32>::value * 4> const K =
     {
         0xd76aa478, 0xe8c7b756, 0x242070db, 0xc1bdceee,
         0xf57c0faf, 0x4787c62a, 0xa8304613, 0xfd469501,
@@ -103,7 +108,7 @@ void MD5hashing::MD5BlockCipherLike::process(void)
         0xf7537e82, 0xbd3af235, 0x2ad7d2bb, 0xeb86d391
     };
 
-    static std::array<const uint8_t, MD5_MSGBLOCK_SIZE / 4> ref_leftshift =
+    static const std::array<uint8_t, std::tuple_size<MsgBlock_uint32>::value> ref_leftshift =
     {
         7, 12, 17, 22,
         5,  9, 14, 20,
@@ -113,13 +118,14 @@ void MD5hashing::MD5BlockCipherLike::process(void)
 
     auto shift = [](auto x) { return (x / 16) * 4 + (x % 4); };
 
-    std::array<uint32_t,16> W;
+    MsgBlock_uint32 W;
     uint32_t A, B, C, D;
 
     // initialize the first 16 words in the array W
-    for (uint8_t t = 0; t < 16; ++t) {
-        W[t] = htole32((*reinterpret_cast<MD5MsgBlock_uint32*>(m_msgBlock.data()))[t]);
-    }
+    std::transform(msgBlock.begin(),
+                   msgBlock.end(),
+                   W.begin(),
+                   [](uint32_t n) { return htole32(n); });
 
     A = m_intermediateHash[0];
     B = m_intermediateHash[1];
@@ -166,8 +172,6 @@ void MD5hashing::MD5BlockCipherLike::process(void)
     m_intermediateHash[1] += B;
     m_intermediateHash[2] += C;
     m_intermediateHash[3] += D;
-
-    m_msgBlockIndex = 0;
 }
 
 } /* namespace crypto */

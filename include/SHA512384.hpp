@@ -6,22 +6,15 @@
 namespace crypto {
 
 #define SHA512384_TMPHASH_SIZE   64 // (in bytes)
-#define SHA512384_MSGBLOCK_SIZE  128 // (in bytes)
 
     template <size_t N>
         using SHA512384hash = CryptoHash<N>;
 
     template <size_t N_digest>
-        class SHA512384hashing : public HashingStrategy<SHA512384_TMPHASH_SIZE, uint64_t, SHA512384_MSGBLOCK_SIZE, N_digest>
+        class SHA512384hashing : public HashingStrategy<SHA512384_TMPHASH_SIZE, N_digest, uint64_t>
     {
         protected:
 
-            class SHA512384BlockCipherLike;
-
-            template <size_t N>
-                using HS = HashingStrategy<SHA512384_TMPHASH_SIZE, uint64_t, SHA512384_MSGBLOCK_SIZE, N>;
-
-            SHA512384hashing(std::unique_ptr< typename HS<N_digest>::StrategyBlockCipherLike >&& p);
             SHA512384hashing(void) = delete;
             virtual ~SHA512384hashing() = default;
 
@@ -30,6 +23,12 @@ namespace crypto {
 
             SHA512384hashing(SHA512384hashing&& other) = default;
             SHA512384hashing& operator=(SHA512384hashing&& other) = default;
+
+            template <size_t N>
+                using HS = HashingStrategy<SHA512384_TMPHASH_SIZE, N, uint64_t>;
+
+            template <size_t N>
+                using HSBC = typename HS<N>::StrategyBlockCipherLike;
 
             class SHA512384BlockCipherLike : public HS<N_digest>::StrategyBlockCipherLike
             {
@@ -51,6 +50,7 @@ namespace crypto {
                     virtual void reset(void) = 0;
             };
 
+            SHA512384hashing(std::unique_ptr< typename HS<N_digest>::StrategyBlockCipherLike >&& p);
     };
 
 } /* namespace crypto */

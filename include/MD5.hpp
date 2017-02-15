@@ -6,11 +6,10 @@
 namespace crypto {
 
 #define MD5_HASH_SIZE      16 // (in bytes)
-#define MD5_MSGBLOCK_SIZE  64 // (in bytes)
 
     using MD5hash = CryptoHash<MD5_HASH_SIZE>;
 
-    class MD5hashing : public HashingStrategy<MD5_HASH_SIZE, uint32_t, MD5_MSGBLOCK_SIZE>
+    class MD5hashing : public HashingStrategy<MD5_HASH_SIZE>
     {
         public:
 
@@ -24,6 +23,9 @@ namespace crypto {
             MD5hashing& operator=(MD5hashing&& other) = default;
 
         private:
+
+            using HS = HashingStrategy<MD5_HASH_SIZE>;
+            using HSBC = HS::StrategyBlockCipherLike;
 
             class MD5BlockCipherLike final : public StrategyBlockCipherLike
             {

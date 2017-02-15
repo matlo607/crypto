@@ -5,11 +5,12 @@
 #include <array>
 #include <iostream>
 #include <memory>
+#include <gsl/span>
 
 namespace crypto {
 
-    template <typename T, size_t N>
-        std::ostream& operator<< (std::ostream& stream, const std::array<T,N>& array);
+    template <typename T, std::ptrdiff_t N>
+        std::ostream& operator<< (std::ostream& stream, const gsl::span<T,N>& array);
 
     template <size_t N>
         using CryptoHash_uint8 = std::array<uint8_t, N>;
@@ -21,25 +22,18 @@ namespace crypto {
         using CryptoHash_uint64 = std::array<uint64_t, N / sizeof(uint64_t)>;
 
     template <size_t N>
-        using MsgBlock_uint8 = std::array<uint8_t, N>;
-
-    template <size_t N>
-        using MsgBlock_uint32 = std::array<uint32_t, N / sizeof(uint32_t)>;
-
-    template <size_t N>
-        using MsgBlock_uint64 = std::array<uint64_t, N / sizeof(uint64_t)>;
-
-    template <size_t N>
         using CryptoHash = CryptoHash_uint8<N>;
 
-    template <size_t N_tmpdigest, typename T_workWord, size_t N_msgBlock, size_t N_digest = N_tmpdigest>
+    template <size_t N_tmpdigest, size_t N_digest = N_tmpdigest,
+              typename T_subTypeBlock = uint32_t,
+              size_t N_blockSize = 16 * sizeof(T_subTypeBlock)>
         class HashingStrategy
         {
             public:
 
                 virtual ~HashingStrategy() = default;
 
-                bool update(const uint8_t array[], size_t size, size_t offset = 0);
+                bool update(gsl::span<const uint8_t> &buf);
                 CryptoHash<N_digest> getHash(void);
 
             protected:
@@ -58,6 +52,10 @@ namespace crypto {
                 {
                     public:
 
+                        using MsgBlock_uint8 = std::array<uint8_t, N_blockSize>;
+                        using MsgBlock_uint32 = std::array<uint32_t, sizeof(MsgBlock_uint8) / sizeof(uint32_t)>;
+                        using MsgBlock_uint64 = std::array<uint64_t, sizeof(MsgBlock_uint8) / sizeof(uint64_t)>;
+
                         StrategyBlockCipherLike(void);
                         virtual ~StrategyBlockCipherLike() = default;
 
@@ -67,16 +65,16 @@ namespace crypto {
                         StrategyBlockCipherLike(StrategyBlockCipherLike&& other);
                         StrategyBlockCipherLike& operator=(StrategyBlockCipherLike&& other);
 
-                        size_t write(const uint8_t buf[], size_t len);
+                        size_t write(gsl::span<const uint8_t> &buf);
                         CryptoHash<N_digest> addPadding(size_t totalMsgLength);
                         virtual void reset(void) = 0;
 
                     protected:
 
-                        MsgBlock_uint8<N_msgBlock> m_msgBlock;
-                        size_t m_msgBlockIndex;
+                        MsgBlock_uint8 m_msgBlock;
+                        gsl::span<uint8_t> m_spaceAvailable;
 
-                        std::array<T_workWord, N_tmpdigest / sizeof(T_workWord)> m_intermediateHash;
+                        std::array<T_subTypeBlock, N_tmpdigest / sizeof(T_subTypeBlock)> m_intermediateHash;
 
                         virtual void process(void) = 0;
                         virtual CryptoHash<N_digest> getDigest(void) = 0;
@@ -96,4 +94,3 @@ namespace crypto {
 #include "HashingStrategy.ipp"
 
 #endif /* _HASHING_STRATEGY_HPP */
-

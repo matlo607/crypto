@@ -18,8 +18,8 @@ namespace crypto {
 
     void SHA384hashing::SHA384BlockCipherLike::reset(void)
     {
-        memset(m_msgBlock.data(), 0, sizeof(m_msgBlock));
-        m_msgBlockIndex = 0;
+        m_msgBlock.fill(0);
+        m_spaceAvailable = m_msgBlock;
         m_intermediateHash = {
             0xcbbb9d5dc1059ed8,
             0x629a292a367cd507,

@@ -7,11 +7,9 @@ namespace crypto {
 
     using namespace utils;
 
-    using SHA512384MsgBlock_uint64 = MsgBlock_uint64<SHA512384_MSGBLOCK_SIZE>;
-
     namespace sha512384_detail {
         template <size_t N>
-            using HS = HashingStrategy<SHA512384_TMPHASH_SIZE, uint64_t, SHA512384_MSGBLOCK_SIZE, N>;
+            using HS = HashingStrategy<SHA512384_TMPHASH_SIZE, N, uint64_t>;
     } /* namespace sha512384_detail */
 
     template <size_t N_digest>
@@ -23,21 +21,23 @@ namespace crypto {
     template <size_t N_digest>
         SHA512384hash<N_digest> SHA512384hashing<N_digest>::SHA512384BlockCipherLike::getDigest(void)
         {
-            using SHA512384hash_uint64 = CryptoHash_uint64<N_digest>;
             SHA512384hash<N_digest> digest;
 
 #if __BYTE_ORDER == __LITTLE_ENDIAN
+            using SHA512384hash_uint64 = CryptoHash_uint64<N_digest>;
+
             auto& dest = *reinterpret_cast<SHA512384hash_uint64*>(digest.data());
+            auto& src = *reinterpret_cast<SHA512384hash_uint64*>(this->m_intermediateHash.data());
 
             // write the hash in big endian
-            auto it_end = this->m_intermediateHash.begin();
-            std::advance(it_end, N_digest / sizeof(uint64_t));
-            std::transform(this->m_intermediateHash.begin(),
-                    it_end,
-                    dest.begin(),
-                    [] (uint64_t n) { return htobe64(n); });
+            std::transform(src.cbegin(),
+                           src.cend(),
+                           dest.begin(),
+                           [] (uint64_t n) { return htobe64(n); });
 #else
-            memcpy(digest.data(), m_intermediateHash.data(), digest.size());
+            auto& temporary = *reinterpret_cast<SHA512384hash*>(this->m_intermediateHash.data());
+
+            std::copy(temporary.cbegin(), temporary.cend(), digest.begin());
 #endif
 
             return std::move(digest);
@@ -46,9 +46,10 @@ namespace crypto {
     template <size_t N_digest>
         void SHA512384hashing<N_digest>::SHA512384BlockCipherLike::setMsgSize(size_t size)
         {
-            auto it = (*reinterpret_cast<SHA512384MsgBlock_uint64*>(this->m_msgBlock.data())).end();
+            using MB64 = typename HSBC<N_digest>::MsgBlock_uint64;
+            auto it = (*reinterpret_cast<MB64*>(this->m_msgBlock.data())).end();
             *--it = htobe64(size);
-            *--it = 0; // assume that a file with a size grather than 2^61 bytes does not exist for now
+            *--it = 0; // assume that a file with a size greater than 2^61 bytes does not exist for now
         }
 
     template <size_t N_digest>
@@ -106,17 +107,17 @@ namespace crypto {
                 0x5fcb6fab3ad6faec, 0x6c44198c4a475817
             };
 
+            auto& msgBlock = *reinterpret_cast<typename HSBC<N_digest>::MsgBlock_uint64 *>(this->m_msgBlock.data());
             std::array<uint64_t, 80> W; // word sequence
             uint64_t A, B, C, D, E, F, G, H; // word buffers
 
             // initialize the first 16 words in the array W with the message block
-            auto& msgBlockUInt64 = *reinterpret_cast<SHA512384MsgBlock_uint64*>(this->m_msgBlock.data());
-            std::transform(msgBlockUInt64.begin(),
-                    msgBlockUInt64.end(),
-                    W.begin(),
-                    [] (uint64_t n) { return htobe64(n); });
+            std::transform(msgBlock.cbegin(),
+                           msgBlock.cend(),
+                           W.begin(),
+                           [] (uint64_t n) { return htobe64(n); });
 
-            for (auto t = msgBlockUInt64.size(); t < W.size(); ++t) {
+            for (auto t = msgBlock.size(); t < W.size(); ++t) {
                 W[t] = SIG1(W[t - 2]) + W[t - 7] + SIG0(W[t - 15]) + W[t - 16];
             }
 
@@ -150,8 +151,6 @@ namespace crypto {
             this->m_intermediateHash[5] += F;
             this->m_intermediateHash[6] += G;
             this->m_intermediateHash[7] += H;
-
-            this->m_msgBlockIndex = 0;
         }
 
 } /* namespace crypto */

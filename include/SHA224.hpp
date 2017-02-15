@@ -25,19 +25,19 @@ namespace crypto {
         private:
 
             class SHA224BlockCipherLike final : public SHA256224BlockCipherLike
-        {
-            public:
-                SHA224BlockCipherLike(void);
-                virtual ~SHA224BlockCipherLike() = default;
+            {
+                public:
+                    SHA224BlockCipherLike(void);
+                    virtual ~SHA224BlockCipherLike() = default;
 
-                SHA224BlockCipherLike(const SHA224BlockCipherLike& other) = delete;
-                SHA224BlockCipherLike& operator=(const SHA224BlockCipherLike& other) = delete;
+                    SHA224BlockCipherLike(const SHA224BlockCipherLike& other) = delete;
+                    SHA224BlockCipherLike& operator=(const SHA224BlockCipherLike& other) = delete;
 
-                SHA224BlockCipherLike(SHA224BlockCipherLike&& other) = default;
-                SHA224BlockCipherLike& operator=(SHA224BlockCipherLike&& other) = default;
+                    SHA224BlockCipherLike(SHA224BlockCipherLike&& other) = default;
+                    SHA224BlockCipherLike& operator=(SHA224BlockCipherLike&& other) = default;
 
-                virtual void reset(void) final override;
-        };
+                    virtual void reset(void) final override;
+            };
     };
 
 } /* namespace crypto */

@@ -7,12 +7,9 @@ namespace crypto {
 
     using namespace utils;
 
-    using SHA256224MsgBlock_uint32 = MsgBlock_uint32<SHA256224_MSGBLOCK_SIZE>;
-    using SHA256224MsgBlock_uint64 = MsgBlock_uint64<SHA256224_MSGBLOCK_SIZE>;
-
     namespace sha256224_detail {
-    template <size_t N>
-        using HS = HashingStrategy<SHA256224_TMPHASH_SIZE, uint32_t, SHA256224_MSGBLOCK_SIZE, N>;
+        template <size_t N>
+            using HS = HashingStrategy<SHA256224_TMPHASH_SIZE, N>;
     } /* namespace sha256224_detail */
 
     template <size_t N_digest>
@@ -24,17 +21,23 @@ namespace crypto {
     template <size_t N_digest>
         SHA256224hash<N_digest> SHA256224hashing<N_digest>::SHA256224BlockCipherLike::getDigest(void)
         {
-            using SHA256224hash_uint32 = CryptoHash_uint32<N_digest>;
             SHA256224hash<N_digest> digest;
 
-
 #if __BYTE_ORDER == __LITTLE_ENDIAN
+            using SHA256224hash_uint32 = CryptoHash_uint32<N_digest>;
+
+            auto& dest = *reinterpret_cast<SHA256224hash_uint32*>(digest.data());
+            auto& src = *reinterpret_cast<SHA256224hash_uint32*>(this->m_intermediateHash.data());
+
             // write the hash in big endian
-            for (uint8_t i = 0; i < N_digest / sizeof(uint32_t); ++i) {
-                (*reinterpret_cast<SHA256224hash_uint32*>(digest.data()))[i] = htobe32(this->m_intermediateHash[i]);
-            }
+            std::transform(src.cbegin(),
+                           src.cend(),
+                           dest.begin(),
+                           [] (uint32_t n) { return htobe32(n); });
 #else
-            memcpy(digest.data(), m_intermediateHash.data(), digest.size());
+            auto& temporary = *reinterpret_cast<SHA256224hash*>(this->m_intermediateHash.data());
+
+            std::copy(temporary.cbegin(), temporary.cend(), digest.begin());
 #endif
 
             return std::move(digest);
@@ -43,7 +46,8 @@ namespace crypto {
     template <size_t N_digest>
         void SHA256224hashing<N_digest>::SHA256224BlockCipherLike::setMsgSize(size_t size)
         {
-            (*reinterpret_cast<SHA256224MsgBlock_uint64*>(this->m_msgBlock.data())).back() = htobe64(size);
+            auto& dest = *reinterpret_cast<typename HSBC<N_digest>::MsgBlock_uint64 *>(this->m_msgBlock.data());
+            dest.back() = htobe64(size);
         }
 
     template <size_t N_digest>
@@ -77,15 +81,17 @@ namespace crypto {
                 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
             };
 
+            auto& msgBlock = *reinterpret_cast<typename HSBC<N_digest>::MsgBlock_uint32 *>(this->m_msgBlock.data());
             std::array<uint32_t, 64> W; // word sequence
             uint32_t A, B, C, D, E, F, G, H; // word buffers
 
-            // initialize the first 16 words in the array W
-            for (uint8_t t = 0; t < 16; ++t) {
-                W[t] = htobe32((*reinterpret_cast<SHA256224MsgBlock_uint32*>(this->m_msgBlock.data()))[t]);
-            }
+            // initialize the first 16 words in the array W with the message block
+            std::transform(msgBlock.cbegin(),
+                           msgBlock.cend(),
+                           W.begin(),
+                           [] (uint32_t n) { return htobe32(n); });
 
-            for (uint8_t t = 16; t < 64; ++t) {
+            for (auto t = msgBlock.size(); t < W.size(); ++t) {
                 W[t] = SIG1(W[t - 2]) + W[t - 7] + SIG0(W[t - 15]) + W[t - 16];
             }
 
@@ -98,7 +104,7 @@ namespace crypto {
             G = this->m_intermediateHash[6];
             H = this->m_intermediateHash[7];
 
-            for (uint8_t t = 0; t < 64; ++t) {
+            for (auto t = 0U; t < W.size(); ++t) {
                 auto T1 = H + EP1(E) + CH(E,F,G) + K[t] + W[t];
                 auto T2 = EP0(A) + MAJ(A,B,C);
                 H = G;
@@ -119,8 +125,6 @@ namespace crypto {
             this->m_intermediateHash[5] += F;
             this->m_intermediateHash[6] += G;
             this->m_intermediateHash[7] += H;
-
-            this->m_msgBlockIndex = 0;
         }
 
 } /* namespace crypto */

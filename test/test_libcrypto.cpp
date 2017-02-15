@@ -1,19 +1,23 @@
-#include "gtest/gtest.h"
+#include <gtest/gtest.h>
 
 #include "utils.hpp"
 #include "HashingStrategy.hpp"
+#include "dummyhashing.hpp"
+#include "MD4.hpp"
+#include "MD5.hpp"
 #include "SHA1.hpp"
 #include "SHA224.hpp"
 #include "SHA256.hpp"
 #include "SHA384.hpp"
 #include "SHA512.hpp"
-#include "MD4.hpp"
-#include "MD5.hpp"
 
 #include <string>
 #include <sstream>
 #include <algorithm>
 #include <utility>
+#include <type_traits>
+
+#include <gsl/span>
 
 #include <sys/time.h>
 
@@ -62,11 +66,11 @@ using crypto::operator<<;
 template <size_t N>
 using HashChallenges = std::array< std::pair<const std::string, const std::string>, N >;
 
-template <size_t N_tmphashSize, typename T_workWord, size_t N_blockSize, size_t N_hashSize>
-using HS = crypto::HashingStrategy< N_tmphashSize, T_workWord, N_blockSize, N_hashSize >;
+template <size_t N_tmpdigest, size_t N_digest = N_tmpdigest, typename T_subTypeBlock = uint32_t, size_t N_blockSize = 64>
+using HS = crypto::HashingStrategy<N_tmpdigest, N_digest, T_subTypeBlock, N_blockSize>;
 
-template <size_t N_challenges, typename T_workWord, size_t N_tmphashSize, size_t N_blockSize, size_t N_hashSize>
-void hashProve(HashChallenges<N_challenges>& challenges, HS<N_tmphashSize,T_workWord,N_blockSize, N_hashSize>&& strategy)
+template <size_t N_challenges, size_t N_tmpdigest, size_t N_digest, typename T_subTypeBlock, size_t N_blockSize>
+void hashProve(HashChallenges<N_challenges>& challenges, HS<N_tmpdigest, N_digest, T_subTypeBlock, N_blockSize>&& strategy)
 {
     std::stringstream ss;
 #ifdef SHOW_TIMING
@@ -77,16 +81,16 @@ void hashProve(HashChallenges<N_challenges>& challenges, HS<N_tmphashSize,T_work
 
         ss.str(std::string());
 
-        const uint8_t* message = reinterpret_cast<const uint8_t*>(challenge.first.c_str());
-        size_t len = challenge.first.length();
+        const uint8_t *p = reinterpret_cast<const uint8_t*>(challenge.first.c_str());
+        const ssize_t len = challenge.first.length();
+        gsl::span<const uint8_t> message {p, len};
 
-        //cout << "challenge: " << message << endl;
 #ifdef SHOW_TIMING
         gettimeofday(&startTime, NULL);
 #endif
 
-        EXPECT_TRUE(strategy.update(message, len));
-        ss << strategy.getHash();
+        EXPECT_TRUE(strategy.update(message));
+        ss << gsl::span<const uint8_t>(strategy.getHash());
 
 #ifdef SHOW_TIMING
         gettimeofday(&endTime, NULL);
@@ -101,25 +105,25 @@ void hashProve(HashChallenges<N_challenges>& challenges, HS<N_tmphashSize,T_work
 
 TEST(BitsRotation, RotateLeftTest)
 {
-    auto rotate_left = [](auto challenge, auto shift, auto expected) {
+    auto check_rotate_left = [](auto challenge, auto shift, auto expected) {
         EXPECT_EQ(expected, crypto::utils::rotate_left(challenge, shift));
     };
 
-    rotate_left(0x00F00000UL, 24, 0x0000F00000000000UL);
-    rotate_left(0x00F00000UL, 0, 0x00F00000UL);
-    rotate_left(0x00F00000UL, sizeof(uint64_t) * 8, 0x00F00000UL);
+    check_rotate_left(0x00F00000UL, 24, 0x0000F00000000000UL);
+    check_rotate_left(0x00F00000UL, 0, 0x00F00000UL);
+    check_rotate_left(0x00F00000UL, sizeof(uint64_t) * 8, 0x00F00000UL);
 
-    rotate_left(0xABCDEF01U, 24, 0x01ABCDEFU);
-    rotate_left(0xABCDEF01U, 0, 0xABCDEF01U);
-    rotate_left(0xABCDEF01U, sizeof(uint32_t) * 8, 0xABCDEF01U);
+    check_rotate_left(0xABCDEF01U, 24, 0x01ABCDEFU);
+    check_rotate_left(0xABCDEF01U, 0, 0xABCDEF01U);
+    check_rotate_left(0xABCDEF01U, sizeof(uint32_t) * 8, 0xABCDEF01U);
 
-    rotate_left(0U, 24, 0U);
-    rotate_left(0U, 0, 0U);
-    rotate_left(0U, sizeof(uint32_t) * 8, 0U);
+    check_rotate_left(0U, 24, 0U);
+    check_rotate_left(0U, 0, 0U);
+    check_rotate_left(0U, sizeof(uint32_t) * 8, 0U);
 
-    rotate_left(~0U, 24, ~0U);
-    rotate_left(~0U, 0, ~0U);
-    rotate_left(~0U, sizeof(uint32_t) * 8, ~0U);
+    check_rotate_left(~0U, 24, ~0U);
+    check_rotate_left(~0U, 0, ~0U);
+    check_rotate_left(~0U, sizeof(uint32_t) * 8, ~0U);
 }
 
 TEST(BitsRotation, RotateRightTest)
@@ -149,25 +153,62 @@ TEST(CryptoHash, DisplayHashTest)
 {
     std::stringstream ss;
 
-    ss << crypto::CryptoHash<1>{ 0x00 };
-    EXPECT_STREQ(ss.str().c_str(), "00");
+    unsigned char a = 0x00;
+    gsl::span<const unsigned char> m {&a, 1};
+    ss << m;
+    EXPECT_STREQ("00", ss.str().c_str());
     ss.str(std::string());
 
-    ss << crypto::CryptoHash<4>{ 0xab, 0xcd, 0xef, 0x12 };
-    EXPECT_STREQ(ss.str().c_str(), "abcdef12");
+    crypto::CryptoHash<4> myhash0 { 0xab, 0xcd, 0xef, 0x12 };
+    ss << gsl::span<const uint8_t>(myhash0);
+    EXPECT_STREQ("abcdef12", ss.str().c_str());
     ss.str(std::string());
 
     crypto::CryptoHash<20> myhash1;
     myhash1.fill(0x0f);
-    ss << myhash1;
-    EXPECT_STREQ(ss.str().c_str(), "0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f");
+    ss << gsl::span<uint8_t>(myhash1);
+    EXPECT_STREQ("0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f", ss.str().c_str());
     ss.str(std::string());
 
     crypto::CryptoHash<4> myhash2;
     myhash2.fill(0x00);
-    ss << myhash2;
-    EXPECT_STREQ(ss.str().c_str(), "00000000");
+    ss << gsl::span<uint8_t>(myhash2);
+    EXPECT_STREQ("00000000", ss.str().c_str());
     ss.str(std::string());
+}
+
+TEST(Hashing, DUMMY_Test)
+{
+    HashChallenges<1> challenges =
+    {
+        std::make_pair(TestEnvironment::getTxt1(), "61626380000000001800000000000000"),
+    };
+
+    hashProve(challenges, crypto::DUMMYhashing());
+}
+
+TEST(Hashing, MD4_Test)
+{
+    HashChallenges<3> challenges =
+    {
+        std::make_pair(TestEnvironment::getTxt1(), "a448017aaf21d8525fc10ae87aa6729d"),
+        std::make_pair(TestEnvironment::getTxt2(), "2d85cb0dfc938572c5b3e8d41b724c55"),
+        std::make_pair(TestEnvironment::getTxt3(), "bdbba5cc002c432ac14368c4ac6a03eb")
+    };
+
+    hashProve(challenges, crypto::MD4hashing());
+}
+
+TEST(Hashing, MD5_Test)
+{
+    HashChallenges<3> challenges =
+    {
+        std::make_pair(TestEnvironment::getTxt1(), "900150983cd24fb0d6963f7d28e17f72"),
+        std::make_pair(TestEnvironment::getTxt2(), "b9522cae373f305effab33e7e7b72a97"),
+        std::make_pair(TestEnvironment::getTxt3(), "47fe7eafa9feb347c9f50f2571f76f06")
+    };
+
+    hashProve(challenges, crypto::MD5hashing());
 }
 
 TEST(Hashing, SHA1_Test)
@@ -248,30 +289,6 @@ TEST(Hashing, SHA512_Test)
     };
 
     hashProve(challenges, crypto::SHA512hashing());
-}
-
-TEST(Hashing, MD4_Test)
-{
-    HashChallenges<3> challenges =
-    {
-        std::make_pair(TestEnvironment::getTxt1(), "a448017aaf21d8525fc10ae87aa6729d"),
-        std::make_pair(TestEnvironment::getTxt2(), "2d85cb0dfc938572c5b3e8d41b724c55"),
-        std::make_pair(TestEnvironment::getTxt3(), "bdbba5cc002c432ac14368c4ac6a03eb")
-    };
-
-    hashProve(challenges, crypto::MD4hashing());
-}
-
-TEST(Hashing, MD5_Test)
-{
-    HashChallenges<3> challenges =
-    {
-        std::make_pair(TestEnvironment::getTxt1(), "900150983cd24fb0d6963f7d28e17f72"),
-        std::make_pair(TestEnvironment::getTxt2(), "b9522cae373f305effab33e7e7b72a97"),
-        std::make_pair(TestEnvironment::getTxt3(), "47fe7eafa9feb347c9f50f2571f76f06")
-    };
-
-    hashProve(challenges, crypto::MD5hashing());
 }
 
 int main(int argc, char* argv[]) {

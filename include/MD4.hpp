@@ -6,11 +6,10 @@
 namespace crypto {
 
 #define MD4_HASH_SIZE      16 // (in bytes)
-#define MD4_MSGBLOCK_SIZE  64 // (in bytes)
 
     using MD4hash = CryptoHash<MD4_HASH_SIZE>;
 
-    class MD4hashing : public HashingStrategy<MD4_HASH_SIZE, uint32_t, MD4_MSGBLOCK_SIZE>
+    class MD4hashing : public HashingStrategy<MD4_HASH_SIZE>
     {
         public:
 
@@ -24,6 +23,9 @@ namespace crypto {
             MD4hashing& operator=(MD4hashing&& other) = default;
 
         private:
+
+            using HS = HashingStrategy<MD4_HASH_SIZE>;
+            using HSBC = HS::StrategyBlockCipherLike;
 
             class MD4BlockCipherLike final : public StrategyBlockCipherLike
             {
