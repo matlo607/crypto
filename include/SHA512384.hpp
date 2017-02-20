@@ -47,7 +47,7 @@ namespace crypto {
                     SHA512384BlockCipherLike(SHA512384BlockCipherLike&& other) = default;
                     SHA512384BlockCipherLike& operator=(SHA512384BlockCipherLike&& other) = default;
 
-                    virtual void reset(void) = 0;
+                    virtual void reset(void) override = 0;
             };
 
             SHA512384hashing(std::unique_ptr< typename HS<N_digest>::StrategyBlockCipherLike >&& p);

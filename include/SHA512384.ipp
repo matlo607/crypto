@@ -1,7 +1,5 @@
 #include "utils.hpp"
-
-#include <endian.h>
-#include <cstring>
+#include "endian.hpp"
 
 namespace crypto {
 
@@ -23,7 +21,7 @@ namespace crypto {
         {
             SHA512384hash<N_digest> digest;
 
-#if __BYTE_ORDER == __LITTLE_ENDIAN
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
             using SHA512384hash_uint64 = CryptoHash_uint64<N_digest>;
 
             auto& dest = *reinterpret_cast<SHA512384hash_uint64*>(digest.data());

@@ -2,6 +2,7 @@
 #define _DUMMY_HASHING_
 
 #include "HashingStrategy.hpp"
+#include "endian.hpp"
 
 namespace crypto {
 
@@ -61,7 +62,7 @@ namespace crypto {
                     {
                         DUMMYhash digest;
 
-#if __BYTE_ORDER == __BIG_ENDIAN
+#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
                         auto& dest = *reinterpret_cast<DUMMYhash_uint32*>(digest.data());
 
                         // write the hash in little endian

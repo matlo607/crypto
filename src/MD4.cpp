@@ -1,9 +1,7 @@
 #include "MD4.hpp"
 #include "HashingStrategy.hpp"
 #include "utils.hpp"
-
-#include <cstring>
-#include <endian.h>
+#include "endian.hpp"
 
 namespace crypto {
 
@@ -36,7 +34,7 @@ MD4hash MD4hashing::MD4BlockCipherLike::getDigest(void)
 {
     MD4hash digest;
 
-#if __BYTE_ORDER == __BIG_ENDIAN
+#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
     using MD4hash_uint32 = CryptoHash_uint32<sizeof(MD4hash)>;
 
     auto& dest = *reinterpret_cast<MD4hash_uint32*>(digest.data());

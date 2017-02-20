@@ -1,9 +1,7 @@
 #include "MD5.hpp"
 #include "HashingStrategy.hpp"
 #include "utils.hpp"
-
-#include <cstring>
-#include <endian.h>
+#include "endian.hpp"
 
 namespace crypto {
 
@@ -36,7 +34,7 @@ MD5hash MD5hashing::MD5BlockCipherLike::getDigest(void)
 {
     MD5hash digest;
 
-#if __BYTE_ORDER == __BIG_ENDIAN
+#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
     using MD5hash_uint32 = CryptoHash_uint32<sizeof(MD5hash)>;
 
     auto& dest = *reinterpret_cast<MD5hash_uint32*>(digest.data());

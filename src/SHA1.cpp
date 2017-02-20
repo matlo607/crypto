@@ -1,9 +1,7 @@
 #include "SHA1.hpp"
 #include "HashingStrategy.hpp"
 #include "utils.hpp"
-
-#include <endian.h>
-#include <cstring>
+#include "endian.hpp"
 
 namespace crypto {
 
@@ -37,7 +35,7 @@ SHA1hash SHA1hashing::SHA1BlockCipherLike::getDigest(void)
 {
     SHA1hash digest;
 
-#if __BYTE_ORDER == __LITTLE_ENDIAN
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
     using SHA1hash_uint32 = CryptoHash_uint32<sizeof(SHA1hash)>;
 
     auto& dest = *reinterpret_cast<SHA1hash_uint32*>(digest.data());
