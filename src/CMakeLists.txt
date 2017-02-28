@@ -13,6 +13,6 @@ set (SRC_FILES
     "${CMAKE_CURRENT_SOURCE_DIR}/SHA512.cpp"
     )
 
-add_library (crypto_static STATIC ${SRC_FILES})
-add_library (crypto SHARED ${SRC_FILES})
+add_library (cryptonew_static STATIC ${SRC_FILES})
+add_library (cryptonew SHARED ${SRC_FILES})
 

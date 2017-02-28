@@ -1,0 +1,10 @@
+[requires]
+GSL/0.0.0.0-2@TimSimpson/testing
+gtest/1.8.0@lasote/stable
+
+[generators]
+cmake
+
+[options]
+gtest:shared=False
+
