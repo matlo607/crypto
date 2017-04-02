@@ -111,19 +111,23 @@ TEST(BitsRotation, RotateLeftTest)
 
     check_rotate_left(0x00F00000UL, 24, 0x0000F00000000000UL);
     check_rotate_left(0x00F00000UL, 0, 0x00F00000UL);
-    check_rotate_left(0x00F00000UL, sizeof(uint64_t) * 8, 0x00F00000UL);
+    // undefined behavior
+    //check_rotate_left(0x00F00000UL, sizeof(uint64_t) * 8, 0x00F00000UL);
 
     check_rotate_left(0xABCDEF01U, 24, 0x01ABCDEFU);
     check_rotate_left(0xABCDEF01U, 0, 0xABCDEF01U);
-    check_rotate_left(0xABCDEF01U, sizeof(uint32_t) * 8, 0xABCDEF01U);
+    // undefined behavior
+    //check_rotate_left(0xABCDEF01U, sizeof(uint32_t) * 8, 0xABCDEF01U);
 
     check_rotate_left(0U, 24, 0U);
     check_rotate_left(0U, 0, 0U);
-    check_rotate_left(0U, sizeof(uint32_t) * 8, 0U);
+    // undefined behavior
+    //check_rotate_left(0U, sizeof(uint32_t) * 8, 0U);
 
     check_rotate_left(~0U, 24, ~0U);
     check_rotate_left(~0U, 0, ~0U);
-    check_rotate_left(~0U, sizeof(uint32_t) * 8, ~0U);
+    // undefined behavior
+    //check_rotate_left(~0U, sizeof(uint32_t) * 8, ~0U);
 }
 
 TEST(BitsRotation, RotateRightTest)
@@ -134,19 +138,23 @@ TEST(BitsRotation, RotateRightTest)
 
     rotate_right(0x00F00000UL, 24, 0xF000000000000000UL);
     rotate_right(0x00F00000UL, 0, 0x00F00000UL);
-    rotate_right(0x00F00000UL, sizeof(uint64_t) * 8, 0x00F00000UL);
+    // undefined behavior
+    //rotate_right(0x00F00000UL, sizeof(uint64_t) * 8, 0x00F00000UL);
 
     rotate_right(0xABCDEF01U, 24, 0xCDEF01ABU);
     rotate_right(0xABCDEF01U, 0, 0xABCDEF01U);
-    rotate_right(0xABCDEF01U, sizeof(uint32_t) * 8, 0xABCDEF01U);
+    // undefined behavior
+    //rotate_right(0xABCDEF01U, sizeof(uint32_t) * 8, 0xABCDEF01U);
 
     rotate_right(0U, 24, 0U);
     rotate_right(0U, 0, 0U);
-    rotate_right(0U, sizeof(uint32_t) * 8, 0U);
+    // undefined behavior
+    //rotate_right(0U, sizeof(uint32_t) * 8, 0U);
 
     rotate_right(~0U, 24, ~0U);
     rotate_right(~0U, 0, ~0U);
-    rotate_right(~0U, sizeof(uint32_t) * 8, ~0U);
+    // undefined behavior
+    //rotate_right(~0U, sizeof(uint32_t) * 8, ~0U);
 }
 
 TEST(CryptoHash, DisplayHashTest)
